@@ -109,8 +109,7 @@ function analyzeData() {
     renderUserAnalysis(userAnalysis);
     renderOverallAnalysis(filteredData);
     renderViewingPatterns(filteredData);
-    renderContentPopularity(filteredData);
-    renderMapData(filteredData);
+    renderContentPopularity(filteredData, 'title-chart');
 }
 function renderMapData(data) {
     const totalViews = data.length;
@@ -187,16 +186,9 @@ function renderViewingPatterns(data) {
     createBarChart(viewsByDayOfWeek, '#daily-chart', 'Day of Week', 'Total Hours Watched');
 }
 
-function renderContentPopularity(data) {
-    const topTitles = d3.rollups(data, v => d3.sum(v, d => d.DurationHours), d => d.Title)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 10);
-    createBarChart(topTitles, '#title-chart', 'Title', 'Total Hours Watched');
-}
-
 function getMostWatchedShow(data) {
     const shows = d3.rollups(data, v => d3.sum(v, d => d.DurationHours), d => d.Title)
-        .sort((a, b) => b[1] - a[1]);
+    .sort((a, b) => b[1] - a[1]);
     return shows[0][0];
 }
 
@@ -205,21 +197,21 @@ function getPreferredDevice(data) {
         v => d3.sum(v, d => d.DurationHours),
         d => categorizeDevice(d['Device Type']))
         .sort((a, b) => b[1] - a[1]);
-    return devices[0][0];
-}
+        return devices[0][0];
+    }
+    
+    function categorizeDevice(deviceType) {
+        const deviceCategories = {
+            TV: ['TV', 'Smart TV', 'Roku', 'Fire TV', 'Apple TV', 'Chromecast'],
+            Phone: ['iPhone', 'Mobile', 'Android', 'iOS', 'Samsung'],
+            Tablet: ['iPad'],
+            Laptop: ['MAC', 'Mac', 'Macbook', 'Firefox'],
+            PC: ['PC', 'iMac'],
+            Videogame: ['PS4', 'Wii', 'Xbox'],
+        };
 
-function categorizeDevice(deviceType) {
-    const deviceCategories = {
-        TV: ['TV', 'Smart TV', 'Roku', 'Fire TV', 'Apple TV', 'Chromecast'],
-        Phone: ['iPhone', 'Mobile', 'Android', 'iOS', 'Samsung'],
-        Tablet: ['iPad'],
-        Laptop: ['MAC', 'Mac', 'Macbook', 'Firefox'],
-        PC: ['PC', 'iMac'],
-        Videogame: ['PS4', 'Wii', 'Xbox'],
-    };
-
-    for (let category in deviceCategories) {
-        if (deviceCategories[category].some(device => deviceType.toLowerCase().includes(device.toLowerCase()))) {
+        for (let category in deviceCategories) {
+            if (deviceCategories[category].some(device => deviceType.toLowerCase().includes(device.toLowerCase()))) {
             return category;
         }
     }
@@ -232,7 +224,7 @@ function getViewingHabits(data) {
     const eveningHours = d3.sum(data.filter(d => d.StartTime.getHours() >= 18 && d.StartTime.getHours() < 21), d => d.DurationHours);
     const earlyNightHours = d3.sum(data.filter(d => d.StartTime.getHours() >= 21 && d.StartTime.getHours() < 0), d => d.DurationHours);
     const lateNightHours = d3.sum(data.filter(d => d.StartTime.getHours() >= 0 && d.StartTime.getHours() < 5), d => d.DurationHours);
-
+    
     // Fix the typo and ensure each condition checks correctly
     const max = Math.max(morningHours, afternoonHours, eveningHours, earlyNightHours, lateNightHours);
     let habit = "";
@@ -241,6 +233,207 @@ function getViewingHabits(data) {
     else if (max === eveningHours) habit = "After Work Viewer";
     else if (max === earlyNightHours) habit = "Before Bed Viewer";
     else habit = "Night Owl";
-
+    
     return `${habit}`;
 }
+
+function renderContentPopularity(data, containerId) {
+    // Process the data
+    const topTitles = d3.rollups(data, v => d3.sum(v, d => d.DurationHours), d => d.Title)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10);
+  
+    // Netflix image URLs
+    const netflixImages = [
+      "https://occ-0-1567-1123.1.nflxso.net/dnm/api/v5/rendition/412e4119fb212e3ca9f1add558e2e7fed42f8fb4/AAAABRvngexxF8H1-OzRWFSj6ddD-aB93tTBP9kMNz3cIVfuIfLEP1E_0saiNAwOtrM6xSOXvoiSCMsihWSkW0dq808-R7_lBnr6WHbjkKBX6I3sD0uCcS8kSPbRjEDdG8CeeVXEAEV6spQ.webp",
+      "https://occ-0-243-299.1.nflxso.net/dnm/api/v5/rendition/412e4119fb212e3ca9f1add558e2e7fed42f8fb4/AAAABZEK-7pZ1H5FD4cTyUb9qB_KeyJGz5p-kfPhCFv4GU_3mbdm8Xfsy4IBchlG9PFNdGff8cBNPaeMra72VFnot41nt0y3e8RLgaVwwh3UvyM2H2_MkmadWbQUeGuf811K7-cxJJh7gA.jpg",
+      "https://occ-0-243-299.1.nflxso.net/dnm/api/v5/rendition/412e4119fb212e3ca9f1add558e2e7fed42f8fb4/AAAABQCoK53qihwVPLRxPEDX98nyYpGbxgi5cc0ZOM4iHQu7KQvtgNyaNM5PsgI0vy5g3rLPZdjGCFr1EggrCPXpL77p2H08jV0tNEmIfs_e8KUfvBJ6Ay5nM4UM1dl-58xA6t1swmautOM.webp",
+      "https://occ-0-243-299.1.nflxso.net/dnm/api/v5/rendition/412e4119fb212e3ca9f1add558e2e7fed42f8fb4/AAAABdYtAqj8CyaJTWq5taD8Ro_UgwH3nne9QpFGVps-2J3IG-leqrfqXFii4jzZn48nPYTkrlwKQEV0R7_cEKlYBPRzdKqNODc-Oz26IL3LlLgFboXibIWXwxzeYxzuqn0I9TpARjeByw.jpg",
+      "https://occ-0-243-299.1.nflxso.net/dnm/api/v5/rendition/412e4119fb212e3ca9f1add558e2e7fed42f8fb4/AAAABbcCX42tsqGbBvO2y9CQv5-7QvYbCfoHtXsuc6NPCtZaKa4l4fBX3XWvUwG9F2A3CTsNpHVmulxBbdXKwK8Q6xGjejd9FoadGkZ7CnGrSl601TOQjzSHJ23NuIPC8j0QMGORL4uRIA.jpg",
+      "https://occ-0-243-299.1.nflxso.net/dnm/api/v5/rendition/412e4119fb212e3ca9f1add558e2e7fed42f8fb4/AAAABVopDZ5Fy9_fk_HO5WxHTXKKjKhtWFupbSjuvPwfLK_vytzon4EwRUdGgYJ34JwPxOTK_NkV3aXfkULMB0Dcct-FyfqzH-X44VXuRMp4QeBHlvKwWeZFpZlGdItPzmmg4scmwhG7SQ.jpg",
+      "https://occ-0-243-299.1.nflxso.net/dnm/api/v5/rendition/412e4119fb212e3ca9f1add558e2e7fed42f8fb4/AAAABTOj1-116yVcgKWMU2dI3GFR4x0fSkiGsqtLLeLUxRR7STaksjAqBTrYlTfrB8nIGnGvXksi0ewXAhVGg6-pLxpFOIfcpjK-pf8D5xehFZo5a6vJbo4L0AGbrzglbyUoq255QBJgRQ.jpg",
+      "https://occ-0-243-299.1.nflxso.net/dnm/api/v5/rendition/a76057bcfd003711a76fb3985b1f2cf74beee3b8/AAAABd3IBDpxbRcHXvRMFCZeKa2aHLU1P4SJtrACMS9om3yhLjqPlvNlmR_fypPxjtbsbnKaC4JZhPSpDG4r_kdxSHHAltWguMcCB-1Y1OShr2zWfUv7Whf_39fNH5ZJ3_0gxQrs0akmQjQz44_LT7jXH5LMZ7iMBAzac5IEj4m7Fn_5OWEGYnVsDsKG-QTommDooULMDF9bEw.jpg",
+      "https://occ-0-243-299.1.nflxso.net/dnm/api/v5/rendition/a76057bcfd003711a76fb3985b1f2cf74beee3b8/AAAABXSd7bhDddcwkq9XpksoQFCHVx29Sxl_h4hb2n3F2GIt32a4XWcOnctQfgnT5qdolv8UML6_xNB5CJ89h56wueb13mYmEBr0sx5e9iLPdtVcOQAOmKXKWHHXwFvJuCUwuNnL3s8eAQwqLXPVMHMEsujM684rUGrZNF2btN2GRy5-RyEslsxZO93V2Q_H2bWs8A8oayt1h5M.webp",
+      "https://occ-0-243-299.1.nflxso.net/dnm/api/v5/rendition/a76057bcfd003711a76fb3985b1f2cf74beee3b8/AAAABbXWODpAWqVXcmmjMA7K-2mPkQpvwCLfSdeyhVXzR8A3MSpdSEnnjf4HEJJTYC-TnktU6njTUGAxmzWEYCaJbk4v_ZeL-7QGzmkvYBjg_N-evr2XmcX-Fanoyvu_nimFP4iigPe4O3Vr_WcgplhwkDrJwPUJa84wRLrNAx3TufN5V7cWRP4indqu5HQahvgFEqfL9zjp4g.jpg"
+    ];
+  
+    // Get the container element
+    const container = document.getElementById(containerId);
+    if (!container) {
+      console.error(`Container with id '${containerId}' not found`);
+      return;
+    }
+    container.innerHTML = ''; // Clear existing content
+  
+    // Create the wrapper
+    const wrapper = document.createElement('div');
+    wrapper.className = 'wrapper';
+    container.appendChild(wrapper);
+  
+    // Create the section
+    const section = document.createElement('section');
+    wrapper.appendChild(section);
+  
+    // Create left arrow
+    const leftArrow = document.createElement('a');
+    leftArrow.href = '#';
+    leftArrow.className = 'arrow__btn left-arrow';
+    leftArrow.innerHTML = '‹';
+    section.appendChild(leftArrow);
+  
+    // Create items container
+    const itemsContainer = document.createElement('div');
+    itemsContainer.className = 'items';
+    section.appendChild(itemsContainer);
+  
+    // Create items
+    topTitles.forEach(([title, hours], index) => {
+      const item = document.createElement('div');
+      item.className = 'item';
+      
+      const img = document.createElement('img');
+      img.src = netflixImages[index % netflixImages.length];
+      img.alt = title;
+      item.appendChild(img);
+  
+      const titleElement = document.createElement('div');
+      titleElement.textContent = title;
+      titleElement.className = 'title';
+      item.appendChild(titleElement);
+  
+      const hoursElement = document.createElement('div');
+      hoursElement.textContent = `${Math.round(hours)} hours watched`;
+      hoursElement.className = 'hours';
+      item.appendChild(hoursElement);
+  
+      itemsContainer.appendChild(item);
+    });
+  
+    // Create right arrow
+    const rightArrow = document.createElement('a');
+    rightArrow.href = '#';
+    rightArrow.className = 'arrow__btn right-arrow';
+    rightArrow.innerHTML = '›';
+    section.appendChild(rightArrow);
+  
+    // Add CSS
+    const style = document.createElement('style');
+    style.textContent = `
+      .wrapper {
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+      }
+      .wrapper section {
+        width: 100%;
+        position: relative;
+        display: flex;
+        align-items: center;
+        margin: 20px 0;
+      }
+      .wrapper section .items {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+        width: calc(100% - 100px);
+        margin: 0 50px;
+      }
+      .wrapper section .items::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      .wrapper section .items::-webkit-scrollbar-thumb {
+        background: #666;
+        border-radius: 10px;
+      }
+      .wrapper section .items::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .wrapper section .item {
+        flex: 0 0 19.7%;
+        padding: 0 2px;
+        transition: transform 250ms ease-in-out;
+      }
+      .wrapper section .item img {
+        width: 100%;
+        height: auto;
+      }
+      .wrapper section .item:hover {
+        transform: scale(1.2);
+        z-index: 1;
+      }
+      .wrapper section .item .title,
+      .wrapper section .item .hours {
+        position: absolute;
+        left: 0;
+        right: 0;
+        color: white;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+        text-align: center;
+        opacity: 0;
+        transition: opacity 250ms ease-in-out;
+      }
+      .wrapper section .item:hover .title,
+      .wrapper section .item:hover .hours {
+        opacity: 1;
+      }
+      .wrapper section .item .title {
+        bottom: 20px;
+        font-weight: bold;
+      }
+      .wrapper section .item .hours {
+        bottom: 5px;
+        font-size: 0.8em;
+      }
+      .wrapper section .arrow__btn {
+        position: absolute;
+        color: #fff;
+        text-decoration: none;
+        font-size: 6em;
+        background: rgba(0,0,0,0.5);
+        width: 50px;
+        padding: 20px;
+        text-align: center;
+        z-index: 1;
+        top: 50%;
+        transform: translateY(-50%);
+        transition: background 0.3s;
+      }
+      .wrapper section .arrow__btn:hover {
+        background: rgba(0,0,0,0.8);
+      }
+      .wrapper section .left-arrow {
+        left: 0;
+      }
+      .wrapper section .right-arrow {
+        right: 0;
+      }
+      h1 {
+        color: red;
+        font-family: 'Arial', sans-serif;
+        text-align: center;
+      }
+    `;
+    document.head.appendChild(style);
+  
+    // Add title
+    const title = document.createElement('h1');
+    title.textContent = 'Top 10 Titles';
+    container.insertBefore(title, wrapper);
+  
+    // Add arrow functionality
+    const scrollAmount = itemsContainer.clientWidth / 2;
+  
+    leftArrow.addEventListener('click', (e) => {
+      e.preventDefault();
+      itemsContainer.scrollBy(-scrollAmount, 0);
+    });
+  
+    rightArrow.addEventListener('click', (e) => {
+      e.preventDefault();
+      itemsContainer.scrollBy(scrollAmount, 0);
+    });
+  }
+  
