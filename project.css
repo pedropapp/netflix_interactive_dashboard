@@ -1,0 +1,64 @@
+body {
+    background-color: #000;
+    color: #fff;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    padding: 20px;
+}
+.chart {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 30px;
+}
+h1, h2, h3 {
+    color: #E50914;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+th, td {
+    border: 1px solid #E50914;
+    padding: 10px;
+    text-align: left;
+}
+th {
+    background-color: #E50914;
+    color: #fff;
+}
+.chart text {
+    fill: #fff;
+}
+.chart .domain, .chart .tick line {
+    stroke: #fff;
+}
+.profile-selector {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+.profile-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 4px;
+    margin: 0 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.profile-avatar:hover, .profile-avatar.active {
+    border: 2px solid #E50914;
+}
+.profile-name {
+    font-size: 12px;
+    color: #ffffff;
+    text-align: center;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.profile-container.active .profile-avatar {
+    border: 2px solid #E50914;
+}
