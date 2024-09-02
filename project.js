@@ -68,14 +68,18 @@ function initializeProfileSelector() {
 }
 
 function selectProfile(profile) {
-    currentProfile = profile;
-    document.querySelectorAll('.profile-avatar').forEach(avatar => {
-        avatar.classList.remove('active');
-        if (avatar.textContent === profile.charAt(0).toUpperCase()) {
-            avatar.classList.add('active');
-        }
-    });
-    analyzeData();
+  currentProfile = profile;
+
+  document.querySelectorAll('.profile-container').forEach(container => {
+      const profileName = container.querySelector('.profile-name').textContent;
+      container.classList.remove('active');
+      
+      if (profileName === profile) {
+          container.classList.add('active');
+      }
+  });
+
+  analyzeData();
 }
 
 function analyzeData() {
@@ -187,38 +191,38 @@ function renderViewingPatterns(data) {
 }
 
 function getMostWatchedShow(data) {
-    const shows = d3.rollups(data, v => d3.sum(v, d => d.DurationHours), d => d.Title)
-    .sort((a, b) => b[1] - a[1]);
-    return shows[0][0];
+  const shows = d3.rollups(data, v => d3.sum(v, d => d.DurationHours), d => d.Title)
+  .sort((a, b) => b[1] - a[1]);
+  return shows[0][0];
 }
 
 function getPreferredDevice(data) {
-    const devices = d3.rollups(data,
-        v => d3.sum(v, d => d.DurationHours),
-        d => categorizeDevice(d['Device Type']))
-        .sort((a, b) => b[1] - a[1]);
-        return devices[0][0];
-    }
+  const devices = d3.rollups(data,
+    v => d3.sum(v, d => d.DurationHours),
+    d => categorizeDevice(d['Device Type']))
+    .sort((a, b) => b[1] - a[1]);
+    return devices[0][0];
+  }
+  
+  function categorizeDevice(deviceType) {
+    const deviceCategories = {
+      TV: ['TV', 'Smart TV', 'Roku', 'Fire TV', 'Apple TV', 'Chromecast'],
+      Phone: ['iPhone', 'Mobile', 'Android', 'iOS', 'Samsung'],
+      Tablet: ['iPad'],
+      Laptop: ['MAC', 'Mac', 'Macbook', 'Firefox'],
+      PC: ['PC', 'iMac'],
+      Videogame: ['PS4', 'Wii', 'Xbox'],
+    };
     
-    function categorizeDevice(deviceType) {
-        const deviceCategories = {
-            TV: ['TV', 'Smart TV', 'Roku', 'Fire TV', 'Apple TV', 'Chromecast'],
-            Phone: ['iPhone', 'Mobile', 'Android', 'iOS', 'Samsung'],
-            Tablet: ['iPad'],
-            Laptop: ['MAC', 'Mac', 'Macbook', 'Firefox'],
-            PC: ['PC', 'iMac'],
-            Videogame: ['PS4', 'Wii', 'Xbox'],
-        };
-
-        for (let category in deviceCategories) {
-            if (deviceCategories[category].some(device => deviceType.toLowerCase().includes(device.toLowerCase()))) {
-            return category;
-        }
+    for (let category in deviceCategories) {
+      if (deviceCategories[category].some(device => deviceType.toLowerCase().includes(device.toLowerCase()))) {
+        return category;
+      }
     }
     return 'Other';
-}
-
-function getViewingHabits(data) {
+  }
+  
+  function getViewingHabits(data) {
     const morningHours = d3.sum(data.filter(d => d.StartTime.getHours() >= 5 && d.StartTime.getHours() < 12), d => d.DurationHours);
     const afternoonHours = d3.sum(data.filter(d => d.StartTime.getHours() >= 12 && d.StartTime.getHours() < 18), d => d.DurationHours);
     const eveningHours = d3.sum(data.filter(d => d.StartTime.getHours() >= 18 && d.StartTime.getHours() < 21), d => d.DurationHours);
@@ -235,14 +239,14 @@ function getViewingHabits(data) {
     else habit = "Night Owl";
     
     return `${habit}`;
-}
-
-function renderContentPopularity(data, containerId) {
+  }
+  
+  function renderContentPopularity(data, containerId) {
     // Process the data
     const topTitles = d3.rollups(data, v => d3.sum(v, d => d.DurationHours), d => d.Title)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10);
-  
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10);
+    
     // Netflix image URLs
     const netflixImages = [
       "https://occ-0-1567-1123.1.nflxso.net/dnm/api/v5/rendition/412e4119fb212e3ca9f1add558e2e7fed42f8fb4/AAAABRvngexxF8H1-OzRWFSj6ddD-aB93tTBP9kMNz3cIVfuIfLEP1E_0saiNAwOtrM6xSOXvoiSCMsihWSkW0dq808-R7_lBnr6WHbjkKBX6I3sD0uCcS8kSPbRjEDdG8CeeVXEAEV6spQ.webp",
@@ -256,7 +260,7 @@ function renderContentPopularity(data, containerId) {
       "https://occ-0-243-299.1.nflxso.net/dnm/api/v5/rendition/a76057bcfd003711a76fb3985b1f2cf74beee3b8/AAAABXSd7bhDddcwkq9XpksoQFCHVx29Sxl_h4hb2n3F2GIt32a4XWcOnctQfgnT5qdolv8UML6_xNB5CJ89h56wueb13mYmEBr0sx5e9iLPdtVcOQAOmKXKWHHXwFvJuCUwuNnL3s8eAQwqLXPVMHMEsujM684rUGrZNF2btN2GRy5-RyEslsxZO93V2Q_H2bWs8A8oayt1h5M.webp",
       "https://occ-0-243-299.1.nflxso.net/dnm/api/v5/rendition/a76057bcfd003711a76fb3985b1f2cf74beee3b8/AAAABbXWODpAWqVXcmmjMA7K-2mPkQpvwCLfSdeyhVXzR8A3MSpdSEnnjf4HEJJTYC-TnktU6njTUGAxmzWEYCaJbk4v_ZeL-7QGzmkvYBjg_N-evr2XmcX-Fanoyvu_nimFP4iigPe4O3Vr_WcgplhwkDrJwPUJa84wRLrNAx3TufN5V7cWRP4indqu5HQahvgFEqfL9zjp4g.jpg"
     ];
-  
+    
     // Get the container element
     const container = document.getElementById(containerId);
     if (!container) {
@@ -274,17 +278,15 @@ function renderContentPopularity(data, containerId) {
     const section = document.createElement('section');
     wrapper.appendChild(section);
   
-    // Create left arrow
-    const leftArrow = document.createElement('a');
-    leftArrow.href = '#';
-    leftArrow.className = 'arrow__btn left-arrow';
-    leftArrow.innerHTML = '‹';
-    section.appendChild(leftArrow);
+    // Create scrollable container
+    const scrollContainer = document.createElement('div');
+    scrollContainer.className = 'scroll-container';
+    section.appendChild(scrollContainer);
   
-    // Create items container
+    // Create items container inside the scrollable container
     const itemsContainer = document.createElement('div');
     itemsContainer.className = 'items';
-    section.appendChild(itemsContainer);
+    scrollContainer.appendChild(itemsContainer);
   
     // Create items
     topTitles.forEach(([title, hours], index) => {
@@ -309,11 +311,14 @@ function renderContentPopularity(data, containerId) {
       itemsContainer.appendChild(item);
     });
   
-    // Create right arrow
-    const rightArrow = document.createElement('a');
-    rightArrow.href = '#';
+    const leftArrow = document.createElement('button');
+    leftArrow.className = 'arrow__btn left-arrow';
+    leftArrow.innerHTML = '&#10094;'; // Left arrow character
+    section.appendChild(leftArrow);
+    
+    const rightArrow = document.createElement('button');
     rightArrow.className = 'arrow__btn right-arrow';
-    rightArrow.innerHTML = '›';
+    rightArrow.innerHTML = '&#10095;'; // Right arrow character
     section.appendChild(rightArrow);
   
     // Add CSS
@@ -323,97 +328,75 @@ function renderContentPopularity(data, containerId) {
         position: relative;
         overflow: hidden;
         width: 100%;
+        padding: 20px 0; /* Add padding to prevent item clipping */
       }
+      
       .wrapper section {
         width: 100%;
         position: relative;
         display: flex;
         align-items: center;
-        margin: 20px 0;
       }
-      .wrapper section .items {
+      
+     .scroll-container {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  width: calc(100% - 50px);
+  padding: 60px 20px;
+  margin: 0 20px;
+  scrollbar-width: none; /* For Firefox */
+}
+
+.scroll-container::-webkit-scrollbar {
+  display: none; /* For Chrome, Safari, and Opera */
+}
+      
+      .items {
         display: flex;
-        overflow-x: auto;
-        scroll-snap-type: x mandatory;
-        scroll-behavior: smooth;
-        -webkit-overflow-scrolling: touch;
-        width: calc(100% - 100px);
-        margin: 0 50px;
+        gap: 10px;
       }
-      .wrapper section .items::-webkit-scrollbar {
-        width: 10px;
-        height: 10px;
-      }
-      .wrapper section .items::-webkit-scrollbar-thumb {
-        background: #666;
-        border-radius: 10px;
-      }
-      .wrapper section .items::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      .wrapper section .item {
-        flex: 0 0 19.7%;
-        padding: 0 2px;
+      
+      .item {
+        flex: 0 0 1%;
         transition: transform 250ms ease-in-out;
       }
-      .wrapper section .item img {
-        width: 100%;
-        height: auto;
+      
+      .item:hover {
+        transform: scale(1.1);
+        z-index: 2;
       }
-      .wrapper section .item:hover {
-        transform: scale(1.2);
-        z-index: 1;
-      }
-      .wrapper section .item .title,
-      .wrapper section .item .hours {
+      
+      .arrow__btn {
         position: absolute;
-        left: 0;
-        right: 0;
-        color: white;
-        text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
-        text-align: center;
-        opacity: 0;
-        transition: opacity 250ms ease-in-out;
-      }
-      .wrapper section .item:hover .title,
-      .wrapper section .item:hover .hours {
-        opacity: 1;
-      }
-      .wrapper section .item .title {
-        bottom: 20px;
-        font-weight: bold;
-      }
-      .wrapper section .item .hours {
-        bottom: 5px;
-        font-size: 0.8em;
-      }
-      .wrapper section .arrow__btn {
-        position: absolute;
-        color: #fff;
-        text-decoration: none;
-        font-size: 6em;
-        background: rgba(0,0,0,0.5);
-        width: 50px;
-        padding: 20px;
-        text-align: center;
-        z-index: 1;
-        top: 50%;
+        top: 45%;
         transform: translateY(-50%);
+        width: 50px;
+        height: 70%;
+        background: rgba(0, 0, 0, 0.35);
+        border: none;
+        outline: none;
         transition: background 0.3s;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 24px;
+        color: white;
+        text-decoration: none;
       }
-      .wrapper section .arrow__btn:hover {
-        background: rgba(0,0,0,0.8);
+      
+      .arrow__btn:hover {
+        background: rgba(0, 0, 0, 0.8);
       }
-      .wrapper section .left-arrow {
-        left: 0;
+      
+      .left-arrow {
+        left: 10px;
       }
-      .wrapper section .right-arrow {
-        right: 0;
-      }
-      h1 {
-        color: red;
-        font-family: 'Arial', sans-serif;
-        text-align: center;
+      
+      .right-arrow {
+        right: 10px;
       }
     `;
     document.head.appendChild(style);
@@ -424,16 +407,22 @@ function renderContentPopularity(data, containerId) {
     container.insertBefore(title, wrapper);
   
     // Add arrow functionality
-    const scrollAmount = itemsContainer.clientWidth / 2;
-  
-    leftArrow.addEventListener('click', (e) => {
-      e.preventDefault();
-      itemsContainer.scrollBy(-scrollAmount, 0);
-    });
-  
-    rightArrow.addEventListener('click', (e) => {
-      e.preventDefault();
-      itemsContainer.scrollBy(scrollAmount, 0);
-    });
+    const scrollAmount = scrollContainer.clientWidth * 0.85;
+
+leftArrow.addEventListener('click', (e) => {
+  e.preventDefault();
+  scrollContainer.scrollBy({
+    left: -scrollAmount,
+    behavior: 'smooth'
+  });
+});
+
+rightArrow.addEventListener('click', (e) => {
+  e.preventDefault();
+  scrollContainer.scrollBy({
+    left: scrollAmount,
+    behavior: 'smooth'
+  });
+});
   }
   

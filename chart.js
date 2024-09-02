@@ -187,7 +187,7 @@ function createWorldMap(data, selector, countryField, valueField) {
 
     const g = svg.append("g");
 
-    const projection = d3.geoNaturalEarth1()
+    const projection = d3.geoEquirectangular()
         .scale(140)
         .translate([width / 2, height / 1.4]);
 
