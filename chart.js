@@ -109,8 +109,8 @@ function createLineChart(data, selector, xLabel, yLabel) {
         .text(yLabel);
 }
 function createPieChart(data, selector, label) {
-    const width = 450;
-    const height = 450;
+    const width = 300;
+    const height = 300;
     const margin = 40;
 
     const radius = Math.min(width, height) / 2 - margin;

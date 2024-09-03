@@ -135,13 +135,16 @@ function renderMapData(data) {
 function renderUserAnalysis(userAnalysis) {
     const userAnalysisHtml = `
     <h2>${userAnalysis.profile}'s Viewing Habits</h2>
-    <table>
-    <tr><th>Total Hours Watched</th><td>${userAnalysis.totalHours} hours</td></tr>
-    <tr><th>Average Duration</th><td>${userAnalysis.averageDuration} minutes</td></tr>
-    <tr><th>Favorite Genre</th><td>${userAnalysis.favoriteGenre}</td></tr>
-    <tr><th>Most Watched Show</th><td>${userAnalysis.mostWatchedShow}</td></tr>
-    <tr><th>Preferred Device</th><td>${userAnalysis.preferredDevice}</td></tr>
-    <tr><th>Viewing Habits</th><td>${userAnalysis.viewingHabits}</td></tr>
+    <table style="width: 100%; table-layout: fixed;">
+        <colgroup>
+            <col style="width: 40%;">
+            <col style="width: 60%;">
+        </colgroup>
+        <tr><th>Total Hours Watched</th><td>${userAnalysis.totalHours} hours</td></tr>
+        <tr><th>Favorite Genre</th><td>${userAnalysis.favoriteGenre}</td></tr>
+        <tr><th>Most Watched Show</th><td>${userAnalysis.mostWatchedShow}</td></tr>
+        <tr><th>Preferred Device</th><td>${userAnalysis.preferredDevice}</td></tr>
+        <tr><th>Viewing Habits</th><td>${userAnalysis.viewingHabits}</td></tr>
     </table>
     `;
 
