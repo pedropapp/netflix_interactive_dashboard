@@ -101,7 +101,6 @@ td {
 .chart {
     background-color: rgba(20, 20, 20, 0.8);
     border-radius: 8px;
-    padding: 50px;
     margin-bottom: 30px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     width: 100%; /* Ensure full width */
@@ -189,4 +188,185 @@ height: 100%;
     .row1 > div {
         width: 100%;
     }
+}
+/* carrousel */
+@font-face {
+    font-family: 'Netflix Sans';
+    src: url('https://assets.nflxext.com/ffe/siteui/fonts/netflix-sans/v3/NetflixSans_W_Rg.woff2') format('woff2'),
+         url('https://assets.nflxext.com/ffe/siteui/fonts/netflix-sans/v3/NetflixSans_W_Rg.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+  }
+
+.wrapper {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    padding: 20px 0;
+}
+
+.wrapper section {
+    width: 100%;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.scroll-container {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    width: calc(100% - 100px);
+    padding: 60px 20px;
+    margin: 0 20px;
+    scrollbar-width: none;
+}
+
+.scroll-container::-webkit-scrollbar {
+    display: none;
+}
+
+.items {
+    display: flex;
+    gap: 10px;
+}
+
+.item {
+    flex: 0 0 200px;
+    transition: transform 250ms ease-in-out;
+    width: 200px; /* Set a fixed width for consistency */
+    margin-right: 8px; /* Add some space between items */
+}
+
+.item:hover {
+    transform: scale(1.22);
+    z-index: 2;
+}
+
+.arrow__btn {
+    position: absolute;
+    top: 45%;
+    transform: translateY(-50%);
+    width: 50px;
+    height: 70%;
+    background: linear-gradient(
+        to top,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 0.5) 25%,
+        rgba(0, 0, 0, 0.7) 50%,
+        rgba(0, 0, 0, 0.5) 75%,
+        rgba(0, 0, 0, 0) 100%
+    );
+    border: none;
+    outline: none;
+    transition: background 0.3s;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    color: white;
+    text-decoration: none;
+}
+
+.arrow__btn:hover {
+    background: linear-gradient(
+        to top,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 0.9) 50%,
+        rgba(0, 0, 0, 0) 100%
+    );
+}
+
+.left-arrow {
+    left: 10px;
+}
+
+.right-arrow {
+    right: 10px;
+}
+
+.carousel-backdrop {
+    width: 200px;
+    height: 112px;
+    background-size: cover;
+    background-position: center;
+}
+
+.carousel-title {
+    font-family: 'Netflix Sans', Arial, sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    margin: 8px 0 4px;
+    color: #fff;
+    transition: opacity 0.3s ease;
+    opacity: 0.9;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .carousel-duration {
+    font-family: 'Netflix Sans', Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    color: #a3a3a3;
+    transition: opacity 0.3s ease;
+    opacity: 0.7;
+  }
+/* Dropdown container */
+.dropdown-container {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 20px;
+}
+
+/* Dropdown select styling */
+#content-type-dropdown {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-color: #141414;
+    border: 1px solid #333;
+    border-radius: 4px;
+    color: #fff;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 10px 40px 10px 20px;
+    width: 200px;
+    transition: all 0.3s ease;
+}
+
+#content-type-dropdown:hover {
+    background-color: #1f1f1f;
+}
+
+#content-type-dropdown:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(229, 9, 20, 0.5);
+}
+
+/* Custom arrow */
+.dropdown-container::after {
+    content: '\25BC';
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    color: #fff;
+    pointer-events: none;
+    font-size: 12px;
+}
+
+/* Dropdown options styling */
+#content-type-dropdown option {
+    background-color: #141414;
+    color: #fff;
+    padding: 10px;
+}
+
+/* Hover effect for options */
+#content-type-dropdown option:hover {
+    background-color: #e50914;
 }
