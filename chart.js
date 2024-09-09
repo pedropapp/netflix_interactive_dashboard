@@ -275,3 +275,186 @@ function createWorldMap(data, selector, countryField, valueField) {
 
     }).catch(error => console.error("Error loading data:", error));
 }
+function createRadialChart(data, selector, xLabel, yLabel) {
+    const width = 600;
+    const height = 600;
+    const margin = 40;
+    const radius = Math.min(width, height) / 2 - margin;
+
+    // Clear any existing SVG
+    const svg = d3.select(selector)
+        .html("")
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height)
+        .append('g')
+        .attr('transform', `translate(${width / 2},${height / 2})`);
+
+    // Add a dark background
+    svg.append('circle')
+        .attr('r', radius + margin)
+        .attr('fill', '#1a1a1a');
+
+    // Ensure data is sorted and includes hour 0
+    data = data.sort((a, b) => a[0] - b[0]);
+    if (data[0][0] !== 0) {
+        data.unshift([0, data[data.length - 1][1]]);
+    }
+
+    // Calculate total hours watched
+    const totalHoursWatched = d3.sum(data, d => d[1]);
+
+    // Scales
+    const angleScale = d3.scaleLinear().domain([0, 24]).range([0, 2 * Math.PI]);
+    const radiusScale = d3.scaleLinear()
+        .domain([0, d3.max(data, d => d[1])])
+        .range([0, radius * 0.8]);
+
+    // Create circular grid lines
+    svg.selectAll('.grid-circle')
+        .data([0.2, 0.4, 0.6, 0.8])
+        .enter()
+        .append('circle')
+        .attr('r', d => radius * d)
+        .attr('fill', 'none')
+        .attr('stroke', '#333')
+        .attr('stroke-width', 0.5);
+
+    // Create hour markers
+    const hourData = d3.range(24);
+    svg.selectAll('.hour-marker')
+        .data(hourData)
+        .enter()
+        .append('g')
+        .attr('class', 'hour-marker')
+        .each(function(d) {
+            const isMainHour = d % 3 === 0;
+            const angle = angleScale(d);
+            const g = d3.select(this);
+
+            g.append('line')
+                .attr('x1', radius * 0.8 * Math.sin(angle))
+                .attr('y1', -radius * 0.8 * Math.cos(angle))
+                .attr('x2', radius * (isMainHour ? 0.9 : 0.85) * Math.sin(angle))
+                .attr('y2', -radius * (isMainHour ? 0.9 : 0.85) * Math.cos(angle))
+                .attr('stroke', '#fff')
+                .attr('stroke-width', isMainHour ? 2 : 1);
+
+            if (isMainHour) {
+                g.append('text')
+                    .attr('x', radius * 0.95 * Math.sin(angle))
+                    .attr('y', -radius * 0.95 * Math.cos(angle))
+                    .attr('dy', '0.35em')
+                    .attr('text-anchor', 'middle')
+                    .attr('fill', '#fff')
+                    .style('font-size', '14px')
+                    .style('font-weight', 'bold')
+                    .text(d);
+            }
+        });
+
+    // Create the area
+    const area = d3.areaRadial()
+        .angle(d => angleScale(d[0]))
+        .innerRadius(0)
+        .outerRadius(d => radiusScale(d[1]))
+        .curve(d3.curveLinearClosed);
+
+    svg.append('path')
+        .datum(data)
+        .attr('fill', 'rgba(0, 255, 255, 0.3)')
+        .attr('stroke', 'cyan')
+        .attr('stroke-width', 2)
+        .attr('d', area);
+
+    // Function to update time indicator
+    function updateTimeIndicator(hour, value) {
+        const angle = angleScale(hour);
+        const percentage = (value / totalHoursWatched) * 100;
+        
+        const indicator = svg.selectAll('.time-indicator')
+            .data([null], () => 'time-indicator');
+
+        const indicatorEnter = indicator.enter().append('g')
+            .attr('class', 'time-indicator');
+
+        indicatorEnter.append('line')
+            .attr('x1', 0)
+            .attr('y1', 0)
+            .attr('stroke', 'red')
+            .attr('stroke-width', 2);
+
+        indicatorEnter.append('text')
+            .attr('y', radius * 0.4)
+            .attr('text-anchor', 'middle')
+            .attr('fill', '#fff')
+            .style('font-size', '20px')
+            .style('font-weight', 'bold');
+
+        indicatorEnter.append('text')
+            .attr('y', radius * 0.4 + 25)
+            .attr('text-anchor', 'middle')
+            .attr('fill', '#fff')
+            .style('font-size', '16px');
+
+        const indicatorUpdate = indicator.merge(indicatorEnter);
+
+        indicatorUpdate.select('line')
+            .attr('x2', radius * 0.7 * Math.sin(angle))
+            .attr('y2', -radius * 0.7 * Math.cos(angle));
+
+        indicatorUpdate.select('text:first-of-type')
+            .text(`${hour}:00`);
+
+        indicatorUpdate.select('text:last-of-type')
+            .text(`${percentage.toFixed(2)}% - ${value.toFixed(2)} hours`);
+    }
+
+    // Initial time indicator (current time)
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentValue = data.find(d => d[0] === currentHour)?.[1] || 0;
+    updateTimeIndicator(currentHour, currentValue);
+
+    // Create invisible circular sectors for hover detection
+    svg.selectAll('.hover-sector')
+        .data(d3.range(24))
+        .enter()
+        .append('path')
+        .attr('class', 'hover-sector')
+        .attr('d', d => d3.arc()
+            .innerRadius(0)
+            .outerRadius(radius)
+            .startAngle(angleScale(d))
+            .endAngle(angleScale(d + 1))()
+        )
+        .attr('fill', 'transparent')
+        .on('mouseover', function(_, i) {
+            const value = data.find(d => d[0] === i)?.[1] || 0;
+            updateTimeIndicator(i, value);
+        })
+        .on('mouseout', () => {
+            const now = new Date();
+            const currentHour = now.getHours();
+            const currentValue = data.find(d => d[0] === currentHour)?.[1] || 0;
+            updateTimeIndicator(currentHour, currentValue);
+        });
+
+    // Add title and subtitle
+    svg.append('text')
+        .attr('x', 0)
+        .attr('y', -radius - 10)
+        .attr('text-anchor', 'middle')
+        .attr('fill', '#fff')
+        .style('font-size', '18px')
+        .style('font-weight', 'bold')
+        .text('Viewing Patterns by Hour');
+
+    svg.append('text')
+        .attr('x', 0)
+        .attr('y', -radius + 10)
+        .attr('text-anchor', 'middle')
+        .attr('fill', '#ccc')
+        .style('font-size', '14px')
+        .text(`${xLabel} / ${yLabel}`);
+}

@@ -110,6 +110,7 @@ function analyzeData() {
     viewingHabits: getViewingHabits(filteredData)
   };
 
+
   renderUserAnalysis(userAnalysis);
   renderOverallAnalysis(filteredData);
   renderViewingPatterns(filteredData);
@@ -160,10 +161,16 @@ function renderOverallAnalysis(data) {
     d => categorizeDevice(d['Device Type']))
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
+  const topGenres = d3.rollups(data,
+    v => d3.sum(v, d => d.DurationHours),
+    d => ['TMDb_Genres'])
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
   const topCountries = d3.rollups(data, v => d3.sum(v, d => d.DurationHours), d => d.Country)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 7);
 
+  createPieChart(topGenres, '#genres-chart', 'TMDb_Genres', 'Total Hours Watched');
   createPieChart(topDevices, '#device-chart', 'Device Type', 'Total Hours Watched');
   createWorldMap(topCountries, '#country-chart', 'Country', 'Total Hours Watched');
 }
@@ -189,14 +196,17 @@ function renderViewingPatterns(data) {
     .sort((a, b) => dayNames.indexOf(a[0]) - dayNames.indexOf(b[0])); // Sort by day order
 
   // Render the charts
-  createLineChart(viewsByHour, '#hourly-chart', 'Hour of Day', 'Total Hours Watched');
+  createRadialChart(viewsByHour, '#hourly-chart', 'Hour of Day', 'Total Hours Watched');
   createBarChart(viewsByDayOfWeek, '#daily-chart', 'Day of Week', 'Total Hours Watched');
 }
+
 function getMostCommonGenre(data) {
-  const genres = d3.rollups(data, v => d3.sum(v, d => d.DurationHours), d => d.TMdb_Genre)
+  const genres = d3.rollups(data, v => d3.sum(v, d => d.DurationHours), d => d.TMDb_Genres)
     .sort((a, b) => b[1] - a[1]);
   return genres[0][0];
 }
+
+console.log(getMostCommonGenre(data));
 
 function getMostWatchedShow(data) {
   const shows = d3.rollups(data, v => d3.sum(v, d => d.DurationHours), d => d.Title)
@@ -234,8 +244,8 @@ function getViewingHabits(data) {
   const morningHours = d3.sum(data.filter(d => d.StartTime.getHours() >= 5 && d.StartTime.getHours() < 12), d => d.DurationHours);
   const afternoonHours = d3.sum(data.filter(d => d.StartTime.getHours() >= 12 && d.StartTime.getHours() < 18), d => d.DurationHours);
   const eveningHours = d3.sum(data.filter(d => d.StartTime.getHours() >= 18 && d.StartTime.getHours() < 21), d => d.DurationHours);
-  const earlyNightHours = d3.sum(data.filter(d => d.StartTime.getHours() >= 21 && d.StartTime.getHours() < 0), d => d.DurationHours);
-  const lateNightHours = d3.sum(data.filter(d => d.StartTime.getHours() >= 0 && d.StartTime.getHours() < 5), d => d.DurationHours);
+  const earlyNightHours = d3.sum(data.filter(d => d.StartTime.getHours() >= 21 && d.StartTime.getHours() < 1), d => d.DurationHours);
+  const lateNightHours = d3.sum(data.filter(d => d.StartTime.getHours() >= 1 && d.StartTime.getHours() < 5), d => d.DurationHours);
 
   // Fix the typo and ensure each condition checks correctly
   const max = Math.max(morningHours, afternoonHours, eveningHours, earlyNightHours, lateNightHours);
@@ -266,7 +276,7 @@ function renderContentPopularity(data, containerId) {
 
   const dropdown = document.createElement('select');
   dropdown.id = 'content-type-dropdown';
-  const options = ['Movie','Series'];
+  const options = ['Movie', 'Series'];
   options.forEach(option => {
     const optionElement = document.createElement('option');
     optionElement.value = option.toLowerCase();
@@ -315,7 +325,6 @@ function renderContentPopularity(data, containerId) {
       filteredData = data.filter(d => d['Title Category']?.toLowerCase() === contentType.toLowerCase());
     }
 
-    console.log(`Filtered data length: ${filteredData.length}`);
 
     const aggregatedData = d3.rollups(
       filteredData,
@@ -335,8 +344,6 @@ function renderContentPopularity(data, containerId) {
       .sort((a, b) => b.totalDuration - a.totalDuration)
       .slice(0, 16);
 
-    console.log(`Top 20 ${contentType} data:`, aggregatedData);
-
     itemsContainer.innerHTML = '';
 
     if (aggregatedData.length === 0) {
@@ -346,7 +353,6 @@ function renderContentPopularity(data, containerId) {
     }
 
     aggregatedData.forEach((item, index) => {
-      console.log(`Creating carousel item ${index + 1}`, item);
 
       const carouselItem = document.createElement('div');
       carouselItem.className = 'item';
@@ -361,7 +367,7 @@ function renderContentPopularity(data, containerId) {
 
       const duration = document.createElement('p');
       duration.className = 'carousel-duration';
-      duration.textContent = `${item.totalDuration} hrs`;
+      duration.textContent = `watched ${item.totalDuration} hrs`;
 
       carouselItem.appendChild(backdrop);
       carouselItem.appendChild(title);
@@ -384,33 +390,33 @@ function renderContentPopularity(data, containerId) {
     const startTime = performance.now();
     const startScrollLeft = scrollContainer.scrollLeft;
     const duration = 1000; // Increased duration to 1000ms (1 second) for slower animation
-  
+
     function easeInOutCubic(t) {
       return t < 0.5
         ? 4 * t * t * t
         : 1 - Math.pow(-2 * t + 2, 3) / 2;
     }
-  
+
     function animate(currentTime) {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
       const easeProgress = easeInOutCubic(progress);
-      
+
       scrollContainer.scrollLeft = startScrollLeft + (scrollAmount * easeProgress);
-  
+
       if (progress < 1) {
         requestAnimationFrame(animate);
       }
     }
-  
+
     requestAnimationFrame(animate);
   }
-  
+
   // Update the event listeners
   leftArrow.addEventListener('click', () => {
     scrollCarousel(scrollContainer, -1);
   });
-  
+
   rightArrow.addEventListener('click', () => {
     scrollCarousel(scrollContainer, 1);
   });
