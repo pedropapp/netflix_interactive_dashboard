@@ -1,6 +1,6 @@
 function createBarChart(data, selector, xLabel, yLabel) {
     const margin = { top: 20, right: 20, bottom: 70, left: 60 };
-    const width = 800 - margin.left - margin.right;
+    const width = 1000 - margin.left - margin.right;
     const height = 400 - margin.top - margin.bottom;
 
     d3.select(selector).selectAll("*").remove();
@@ -16,8 +16,12 @@ function createBarChart(data, selector, xLabel, yLabel) {
         .domain(data.map(d => d[0]))
         .padding(0.1);
 
+    // Calculate the minimum y value to focus on the top range
+    const minY = d3.min(data, d => d[1]) * 0.9; // 90% of the minimum value
+    const maxY = d3.max(data, d => d[1]);
+
     const y = d3.scaleLinear()
-        .domain([0, d3.max(data, d => d[1])])
+        .domain([minY, maxY])
         .range([height, 0]);
 
     svg.append('g')
@@ -28,7 +32,7 @@ function createBarChart(data, selector, xLabel, yLabel) {
         .style('text-anchor', 'end');
 
     svg.append('g')
-        .call(d3.axisLeft(y));
+        .call(d3.axisLeft(y).ticks(5));
 
     svg.selectAll('mybar')
         .data(data)
@@ -40,11 +44,18 @@ function createBarChart(data, selector, xLabel, yLabel) {
         .attr('height', d => height - y(d[1]))
         .attr('fill', '#E50914');
 
-    svg.append('text')
-        .attr('x', width / 2)
-        .attr('y', height + margin.bottom - 10)
+    // Add value labels on top of each bar
+    svg.selectAll('.bar-label')
+        .data(data)
+        .enter()
+        .append('text')
+        .attr('class', 'bar-label')
+        .attr('x', d => x(d[0]) + x.bandwidth() / 2)
+        .attr('y', d => y(d[1]) - 5)
         .attr('text-anchor', 'middle')
-        .text(xLabel);
+        .text(d => d[1].toFixed(2))
+        .attr('fill', 'white')
+        .attr('font-size', '10px');
 
     svg.append('text')
         .attr('transform', 'rotate(-90)')
@@ -54,7 +65,6 @@ function createBarChart(data, selector, xLabel, yLabel) {
         .attr('text-anchor', 'middle')
         .text(yLabel);
 }
-
 function createLineChart(data, selector, xLabel, yLabel) {
     const margin = { top: 20, right: 20, bottom: 30, left: 60 };
     const width = 800 - margin.left - margin.right;
@@ -112,7 +122,6 @@ function createPieChart(data, selector, label) {
     const width = 300;
     const height = 300;
     const margin = 40;
-
     const radius = Math.min(width, height) / 2 - margin;
 
     // Clear the content of the selected container
@@ -126,40 +135,84 @@ function createPieChart(data, selector, label) {
         .append("g")
         .attr("transform", `translate(${width / 2}, ${height / 2})`);
 
+    // Create a tooltip div
+    const tooltip = d3.select("body").append("div")
+        .attr("class", "tooltip")
+        .style("opacity", 0)
+        .style("position", "absolute")
+        .style("background-color", "rgba(0, 0, 0, 0.7)")
+        .style("color", "white")
+        .style("padding", "5px")
+        .style("border-radius", "5px")
+        .style("font-size", "12px")
+        .style("pointer-events", "none");
+
     // Set the color scale with shades of red and black
     const color = d3.scaleOrdinal()
         .domain(data.map(d => d[0]))
-        .range(["#E50914", "#A6000F", "#80000B", "#500008", "#2B0005"]); // Customize these colors
+        .range(["#E50914", "#A6000F", "#80000B", "#500008", "#2B0005"]);
 
     // Compute the position of each slice
     const pie = d3.pie()
-        .value(d => d[1]);
+        .value(d => d[1])
+        .sort(null);
 
     // Generate the arcs
     const arc = d3.arc()
         .innerRadius(0)
         .outerRadius(radius);
 
-    // Bind data to the slices
-    const slices = svg.selectAll("path")
+    // Create a group for each slice
+    const sliceGroups = svg.selectAll(".slice-group")
         .data(pie(data))
         .enter()
-        .append("path")
+        .append("g")
+        .attr("class", "slice-group");
+
+    // Bind data to the slices
+    sliceGroups.append("path")
         .attr("d", arc)
         .attr("fill", d => color(d.data[0]))
         .attr("stroke", "#000")
         .style("stroke-width", "1px");
 
     // Add labels
-    svg.selectAll("text")
-        .data(pie(data))
-        .enter()
-        .append("text")
-        .text(d => `${d.data[0]}: ${d.data[1].toFixed(2)} hours`)
+    sliceGroups.append("text")
+        .text(d => d.data[0])
         .attr("transform", d => `translate(${arc.centroid(d)})`)
-        .style("text-anchor", "start")
-        .style("font-size", "12px")
-        .style("fill", "#FFF");
+        .style("text-anchor", "middle")
+        .style("font-size", "10px")
+        .style("fill", "#FFF")
+        .style("pointer-events", "none")
+        .each(function(d) {
+            const bbox = this.getBBox();
+            const percent = (d.endAngle - d.startAngle) / (2 * Math.PI) * 100;
+            if (percent < 4) {
+                d3.select(this).remove();
+            }
+        });
+
+    // Add hover effects
+    sliceGroups
+        .on("mouseover", function(event, d) {
+            d3.select(this).select("path").transition()
+                .duration(200)
+                .attr("d", d3.arc().innerRadius(0).outerRadius(radius * 1.1));
+            tooltip.transition()
+                .duration(200)
+                .style("opacity", .9);
+            tooltip.html(`${d.data[0]}: ${d.data[1].toFixed(2)} hours`)
+                .style("left", (event.pageX) + "px")
+                .style("top", (event.pageY - 28) + "px");
+        })
+        .on("mouseout", function(d) {
+            d3.select(this).select("path").transition()
+                .duration(200)
+                .attr("d", arc);
+            tooltip.transition()
+                .duration(500)
+                .style("opacity", 0);
+        });
 }
 function createWorldMap(data, selector, countryField, valueField) {
     const width = 960;
@@ -276,9 +329,9 @@ function createWorldMap(data, selector, countryField, valueField) {
     }).catch(error => console.error("Error loading data:", error));
 }
 function createRadialChart(data, selector, xLabel, yLabel) {
-    const width = 600;
-    const height = 600;
-    const margin = 40;
+    const width = 300;
+    const height = 300;
+    const margin = 20;
     const radius = Math.min(width, height) / 2 - margin;
 
     // Clear any existing SVG
@@ -318,7 +371,7 @@ function createRadialChart(data, selector, xLabel, yLabel) {
         .attr('r', d => radius * d)
         .attr('fill', 'none')
         .attr('stroke', '#333')
-        .attr('stroke-width', 0.5);
+        .attr('stroke-width', 0.25);
 
     // Create hour markers
     const hourData = d3.range(24);
@@ -328,7 +381,7 @@ function createRadialChart(data, selector, xLabel, yLabel) {
         .append('g')
         .attr('class', 'hour-marker')
         .each(function(d) {
-            const isMainHour = d % 3 === 0;
+            const isMainHour = d % 6 === 0;
             const angle = angleScale(d);
             const g = d3.select(this);
 
@@ -338,7 +391,7 @@ function createRadialChart(data, selector, xLabel, yLabel) {
                 .attr('x2', radius * (isMainHour ? 0.9 : 0.85) * Math.sin(angle))
                 .attr('y2', -radius * (isMainHour ? 0.9 : 0.85) * Math.cos(angle))
                 .attr('stroke', '#fff')
-                .attr('stroke-width', isMainHour ? 2 : 1);
+                .attr('stroke-width', isMainHour ? 1 : 0.5);
 
             if (isMainHour) {
                 g.append('text')
@@ -347,7 +400,7 @@ function createRadialChart(data, selector, xLabel, yLabel) {
                     .attr('dy', '0.35em')
                     .attr('text-anchor', 'middle')
                     .attr('fill', '#fff')
-                    .style('font-size', '14px')
+                    .style('font-size', '10px')
                     .style('font-weight', 'bold')
                     .text(d);
             }
@@ -362,9 +415,9 @@ function createRadialChart(data, selector, xLabel, yLabel) {
 
     svg.append('path')
         .datum(data)
-        .attr('fill', 'rgba(0, 255, 255, 0.3)')
-        .attr('stroke', 'cyan')
-        .attr('stroke-width', 2)
+        .attr('fill', 'rgba(255, 0, 0, 0.3)')  // Changed to red with transparency
+        .attr('stroke', 'red')  // Changed to red
+        .attr('stroke-width', 1)
         .attr('d', area);
 
     // Function to update time indicator
@@ -381,21 +434,21 @@ function createRadialChart(data, selector, xLabel, yLabel) {
         indicatorEnter.append('line')
             .attr('x1', 0)
             .attr('y1', 0)
-            .attr('stroke', 'red')
-            .attr('stroke-width', 2);
+            .attr('stroke', 'white')  // Changed to white
+            .attr('stroke-width', 1);
 
         indicatorEnter.append('text')
             .attr('y', radius * 0.4)
             .attr('text-anchor', 'middle')
             .attr('fill', '#fff')
-            .style('font-size', '20px')
+            .style('font-size', '12px')
             .style('font-weight', 'bold');
 
         indicatorEnter.append('text')
-            .attr('y', radius * 0.4 + 25)
+            .attr('y', radius * 0.4 + 12)
             .attr('text-anchor', 'middle')
             .attr('fill', '#fff')
-            .style('font-size', '16px');
+            .style('font-size', '12px');
 
         const indicatorUpdate = indicator.merge(indicatorEnter);
 
@@ -407,7 +460,7 @@ function createRadialChart(data, selector, xLabel, yLabel) {
             .text(`${hour}:00`);
 
         indicatorUpdate.select('text:last-of-type')
-            .text(`${percentage.toFixed(2)}% - ${value.toFixed(2)} hours`);
+            .text(`${percentage.toFixed(2)}% - ${value.toFixed(2)} hrs`);
     }
 
     // Initial time indicator (current time)
@@ -441,20 +494,4 @@ function createRadialChart(data, selector, xLabel, yLabel) {
         });
 
     // Add title and subtitle
-    svg.append('text')
-        .attr('x', 0)
-        .attr('y', -radius - 10)
-        .attr('text-anchor', 'middle')
-        .attr('fill', '#fff')
-        .style('font-size', '18px')
-        .style('font-weight', 'bold')
-        .text('Viewing Patterns by Hour');
-
-    svg.append('text')
-        .attr('x', 0)
-        .attr('y', -radius + 10)
-        .attr('text-anchor', 'middle')
-        .attr('fill', '#ccc')
-        .style('font-size', '14px')
-        .text(`${xLabel} / ${yLabel}`);
 }

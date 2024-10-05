@@ -161,15 +161,17 @@ function renderOverallAnalysis(data) {
     d => categorizeDevice(d['Device Type']))
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
-  const topGenres = d3.rollups(data,
-    v => d3.sum(v, d => d.DurationHours),
-    d => ['TMDb_Genres'])
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
+    const topGenres = d3.rollups(data.flatMap(d => {
+      const genresString = d.TMDb_Genres || '';
+      const genres = genresString.split(',').map(g => g.trim()).filter(g => g !== '');
+      return genres.length > 0 ? genres.map(genre => ({genre, hours: d.DurationHours || 0})) : [{genre: 'Unknown', hours: d.DurationHours || 0}];
+    }), v => d3.sum(v, d => d.hours), d => d.genre)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
   const topCountries = d3.rollups(data, v => d3.sum(v, d => d.DurationHours), d => d.Country)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 7);
-
+console.log(topGenres);
   createPieChart(topGenres, '#genres-chart', 'TMDb_Genres', 'Total Hours Watched');
   createPieChart(topDevices, '#device-chart', 'Device Type', 'Total Hours Watched');
   createWorldMap(topCountries, '#country-chart', 'Country', 'Total Hours Watched');
